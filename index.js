@@ -22,8 +22,37 @@ const getExchangeRate = async (fromCurrency, toCurrency) => {
 
   const response = await axios.get(`${url}?${paramsToString}`, config)
 
-  return response.data
+  const usdToFirst = response.data.quotes["USD" + fromCurrency]
+  const usdToSecond = response.data.quotes["USD" + toCurrency]
+
+  const rateLastMonth = usdToFirst['start_rate'] / usdToSecond['start_rate']
+  const rateThisMonth = usdToFirst['end_rate'] / usdToSecond['end_rate']
+
+  const difference = rateThisMonth / rateLastMonth
+  let rateFeedback;
+
+  if (difference > 1) {
+    rateFeedback = roundWith2Digits(difference * 100) + "% increased"
+  } else {
+    rateFeedback = 100 - roundWith2Digits(difference * 100) + "% decreased"
+  }
+
+  return `
+    Last Month
+    1 ${fromCurrency} = ${rateLastMonth} ${toCurrency}
+    
+    This Month
+    1 ${fromCurrency} = ${rateThisMonth} ${toCurrency}
+    
+    Rate
+    ${rateFeedback}
+  `
 }
 
+function roundWith2Digits(digit) {
+  return parseFloat(digit.toString()).toFixed(2)
+}
 
-getExchangeRate("UZS", "EUR")
+getExchangeRate("UZS", "EUR").then(r =>
+  console.log(r)
+)
